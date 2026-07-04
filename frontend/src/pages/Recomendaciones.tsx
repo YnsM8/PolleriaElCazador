@@ -12,7 +12,7 @@ export function Recomendaciones({ data }: PageProps) {
         eyebrow="Cierre ejecutivo"
         title="Recomendaciones"
       />
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 mt-8">
         <StoryInsight title="Inventario">
           Usar la prediccion mensual y considerar el RMSE como margen de seguridad. Para este modelo, el error de referencia es
           {` ${rmse}`}; temporada alta exige stock reforzado de pollo, papas y carbon.

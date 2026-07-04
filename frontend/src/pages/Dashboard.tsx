@@ -34,30 +34,30 @@ export function Dashboard({ data }: PageProps) {
         <KpiCard label="Margen %" value={formatPercent(data.summary.margen_bruto_porcentaje)} />
         <KpiCard label="Descuento" value={formatPercent(data.summary.descuento_promedio)} />
       </div>
-      <div className="mt-6 grid gap-4 xl:grid-cols-2">
+      <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <ChartCard insight="Las ventas crecen con el tiempo y muestran impacto estacional." title="Ventas anuales">
           <ResponsiveContainer>
             <LineChart data={data.ventasAnuales}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="anio" />
-              <YAxis tickFormatter={(value) => `${Number(value) / 1000000}M`} />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Legend />
-              <Line dataKey="ventas_totales" name="Ventas" stroke="#D99A2B" strokeWidth={3} />
-              <Line dataKey="margen_bruto" name="Margen" stroke="#2E7D32" strokeWidth={2} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#332620" vertical={false} />
+              <XAxis dataKey="anio" stroke="#E5A022" tick={{ fill: '#FAF4EC', opacity: 0.7 }} />
+              <YAxis stroke="#E5A022" tick={{ fill: '#FAF4EC', opacity: 0.7 }} tickFormatter={(value) => `${Number(value) / 1000000}M`} />
+              <Tooltip contentStyle={{ backgroundColor: '#15110E', borderColor: '#D4AF37', borderRadius: '8px', color: '#FAF4EC' }} formatter={(value) => formatCurrency(Number(value))} />
+              <Legend wrapperStyle={{ paddingTop: '10px' }} />
+              <Line dataKey="ventas_totales" name="Ventas" stroke="#D4AF37" strokeWidth={3} dot={{ fill: '#15110E', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, stroke: '#E5A022' }} />
+              <Line dataKey="margen_bruto" name="Margen" stroke="#E25611" strokeWidth={2} dot={{ fill: '#15110E', strokeWidth: 2, r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
         <ChartCard insight="Parrillas y brasas sostienen el volumen económico principal." title="Ventas por categoría">
           <ResponsiveContainer>
             <BarChart data={data.ventasCategorias}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="categoria" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={(value) => `${Number(value) / 1000000}M`} />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Legend />
-              <Bar dataKey="ventas_totales" fill="#3B2416" name="Ventas" />
-              <Bar dataKey="margen_bruto" fill="#D99A2B" name="Margen" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#332620" vertical={false} />
+              <XAxis dataKey="categoria" stroke="#E5A022" tick={{ fontSize: 11, fill: '#FAF4EC', opacity: 0.7 }} />
+              <YAxis stroke="#E5A022" tick={{ fill: '#FAF4EC', opacity: 0.7 }} tickFormatter={(value) => `${Number(value) / 1000000}M`} />
+              <Tooltip contentStyle={{ backgroundColor: '#15110E', borderColor: '#D4AF37', borderRadius: '8px', color: '#FAF4EC' }} cursor={{ fill: '#332620', opacity: 0.4 }} formatter={(value) => formatCurrency(Number(value))} />
+              <Legend wrapperStyle={{ paddingTop: '10px' }} />
+              <Bar dataKey="ventas_totales" fill="#E25611" radius={[4, 4, 0, 0]} name="Ventas" />
+              <Bar dataKey="margen_bruto" fill="#D4AF37" radius={[4, 4, 0, 0]} name="Margen" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>

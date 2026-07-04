@@ -19,17 +19,17 @@ export function Inicio({ data }: PageProps) {
         <KpiCard label="Ticket promedio" value={formatCurrency(data.summary.ticket_promedio)} />
         <KpiCard label="Margen bruto" value={formatPercent(data.summary.margen_bruto_porcentaje)} />
       </div>
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
-        <section className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-cazador-brown">Ventas por local</h2>
-          <div className="h-80">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1.5fr_0.8fr]">
+        <section className="premium-card p-6">
+          <h2 className="mb-6 pb-4 border-b border-cazador-border/60 text-xl font-serif font-bold text-cazador-cream">Ventas por local</h2>
+          <div className="h-80 relative z-10">
             <ResponsiveContainer>
               <BarChart data={data.ventasLocales}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="local" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={(value) => `${Number(value) / 1000000}M`} />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Bar dataKey="ventas_totales" fill="#D99A2B" name="Ventas" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#332620" vertical={false} />
+                <XAxis dataKey="local" stroke="#E5A022" tick={{ fontSize: 11, fill: '#FAF4EC', opacity: 0.7 }} />
+                <YAxis stroke="#E5A022" tick={{ fill: '#FAF4EC', opacity: 0.7 }} tickFormatter={(value) => `${Number(value) / 1000000}M`} />
+                <Tooltip contentStyle={{ backgroundColor: '#15110E', borderColor: '#D4AF37', borderRadius: '8px', color: '#FAF4EC' }} cursor={{ fill: '#332620', opacity: 0.4 }} formatter={(value) => formatCurrency(Number(value))} />
+                <Bar dataKey="ventas_totales" fill="#D4AF37" radius={[4, 4, 0, 0]} name="Ventas" />
               </BarChart>
             </ResponsiveContainer>
           </div>

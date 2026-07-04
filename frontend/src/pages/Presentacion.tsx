@@ -18,11 +18,14 @@ export function Presentacion() {
         eyebrow="Exposición"
         title="Presentación de 10 minutos"
       />
-      <div className="space-y-3">
-        {agenda.map((item) => (
-          <article className="grid gap-3 rounded-lg border border-stone-200 bg-white p-4 shadow-sm md:grid-cols-[140px_1fr]" key={item.time}>
-            <p className="font-semibold text-cazador-orange">{item.time}</p>
-            <p className="text-stone-700">{item.topic}</p>
+      <div className="space-y-4">
+        {agenda.map((item, index) => (
+          <article className="grid gap-4 premium-card p-6 md:grid-cols-[140px_1fr] relative overflow-hidden group" key={item.time}>
+            <div className="absolute top-0 left-0 h-full w-1 bg-gradient-to-b from-cazador-amber to-cazador-orange opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <p className="font-sans font-bold tracking-wider text-cazador-amber flex items-center gap-2">
+              <span className="text-cazador-cream/30 font-serif text-sm">0{index + 1}</span> {item.time}
+            </p>
+            <p className="text-cazador-cream/90 font-light text-lg">{item.topic}</p>
           </article>
         ))}
       </div>

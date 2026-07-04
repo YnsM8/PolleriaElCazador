@@ -19,13 +19,13 @@ export function Locales({ data }: PageProps) {
         <ChartCard insight="Calle Real #232 funciona como local matriz y referencia de estabilidad." title="Ventas y margen por local">
           <ResponsiveContainer>
             <BarChart data={data.locales}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="local" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={(value) => `${Number(value) / 1000000}M`} />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Legend />
-              <Bar dataKey="ventas_totales" fill="#D99A2B" name="Ventas" />
-              <Bar dataKey="margen_bruto" fill="#2E7D32" name="Margen" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#332620" vertical={false} />
+              <XAxis dataKey="local" stroke="#E5A022" tick={{ fontSize: 11, fill: '#FAF4EC', opacity: 0.7 }} />
+              <YAxis stroke="#E5A022" tick={{ fill: '#FAF4EC', opacity: 0.7 }} tickFormatter={(value) => `${Number(value) / 1000000}M`} />
+              <Tooltip contentStyle={{ backgroundColor: '#15110E', borderColor: '#D4AF37', borderRadius: '8px', color: '#FAF4EC' }} cursor={{ fill: '#332620', opacity: 0.4 }} formatter={(value) => formatCurrency(Number(value))} />
+              <Legend wrapperStyle={{ paddingTop: '10px' }} />
+              <Bar dataKey="ventas_totales" fill="#E25611" radius={[4, 4, 0, 0]} name="Ventas" />
+              <Bar dataKey="margen_bruto" fill="#D4AF37" radius={[4, 4, 0, 0]} name="Margen" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>

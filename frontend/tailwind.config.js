@@ -3,14 +3,25 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Outfit', 'sans-serif'],
+        serif: ['Fraunces', 'serif'],
+      },
       colors: {
         cazador: {
-          brown: "#3B2416",
-          amber: "#D99A2B",
-          cream: "#FFF7E8",
+          dark: "#0F0B09",
+          brown: "#2A1810",
+          amber: "#E5A022",
+          cream: "#FAF4EC",
           green: "#2E7D32",
-          orange: "#C75B12",
+          orange: "#E25611",
+          gold: "#D4AF37",
+          panel: "#15110E",
+          border: "#332620"
         },
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
       },
     },
   },

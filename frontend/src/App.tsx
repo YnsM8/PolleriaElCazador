@@ -54,24 +54,31 @@ function App() {
   }, [activePage, data]);
 
   return (
-    <div className="min-h-screen bg-cazador-cream text-stone-900">
+    <div className="min-h-screen bg-cazador-dark text-cazador-cream font-sans noise-bg selection:bg-cazador-amber selection:text-cazador-dark">
       <Sidebar activePage={activePage} onChange={setActivePage} />
-      <main className="px-4 py-6 md:ml-72 md:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-4 rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm text-stone-700 shadow-sm">
+      <main className="px-4 py-8 md:ml-72 md:px-10 lg:px-12 relative z-10">
+        <div className="mx-auto max-w-[1400px]">
+          <div className="mb-8 rounded-xl border border-cazador-amber/20 bg-cazador-panel/80 backdrop-blur-md px-6 py-3 text-sm text-cazador-amber shadow-lg shadow-black/20 flex items-center gap-3">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cazador-amber opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-cazador-amber"></span>
+            </span>
             {health ? `${health.project} conectado (${health.status})` : "Conectando con backend..."}
           </div>
           {error ? (
-            <section className="rounded-lg border border-red-200 bg-red-50 p-5 text-red-800">
-              <h1 className="text-xl font-bold">Backend no disponible</h1>
-              <p className="mt-2">{error}</p>
-              <p className="mt-2 text-sm">Ejecuta FastAPI en http://localhost:8000 y genera datos si aún no existen.</p>
+            <section className="premium-card p-6 border-red-900/50 bg-red-950/20 text-red-200">
+              <h1 className="text-2xl font-serif font-bold text-red-400">Backend no disponible</h1>
+              <p className="mt-2 text-red-300/80">{error}</p>
+              <p className="mt-4 text-sm text-red-400/60 font-mono bg-black/40 p-3 rounded-lg border border-red-900/30">Ejecuta FastAPI en http://localhost:8000 y genera datos si aún no existen.</p>
             </section>
           ) : content ? (
-            content
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out fill-mode-both">
+              {content}
+            </div>
           ) : (
-            <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-              <p className="text-stone-700">Cargando indicadores, modelos y datos del dashboard...</p>
+            <section className="premium-card p-10 flex flex-col items-center justify-center min-h-[400px]">
+              <div className="w-12 h-12 border-4 border-cazador-border border-t-cazador-amber rounded-full animate-spin mb-4"></div>
+              <p className="text-cazador-cream/60 font-serif text-lg tracking-wide">Cargando indicadores, modelos y datos del dashboard...</p>
             </section>
           )}
         </div>
