@@ -27,6 +27,8 @@ http://localhost:5173
 
 La pantalla inicial debe cargar y consultar `http://localhost:8000/api/health` si el backend esta activo.
 
+Para apuntar a otro backend, define `VITE_API_URL` o `VITE_API_BASE_URL`.
+
 ## Build
 
 ```powershell

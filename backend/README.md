@@ -80,3 +80,24 @@ Invoke-RestMethod -Method Post http://localhost:8000/api/assistant/chat -Content
 ```
 
 El asistente usa reglas, contexto del negocio y KPIs/modelos locales. No usa APIs externas.
+
+## Supabase PostgreSQL
+
+Configura `DATABASE_URL` para usar PostgreSQL/Supabase como Data Warehouse. Si no existe, el backend usa CSV local como fallback.
+
+```powershell
+$env:DATABASE_URL="postgresql+psycopg://postgres:password@db.project-ref.supabase.co:5432/postgres"
+python scripts/create_schema.py
+python scripts/seed_database.py --replace
+python scripts/check_database.py
+```
+
+`--replace` trunca y reemplaza datos del warehouse; usalo solo con confirmacion.
+
+Endpoints de verificacion:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/api/warehouse/status
+Invoke-RestMethod http://localhost:8000/api/warehouse/schema
+Invoke-RestMethod -Method Post http://localhost:8000/api/warehouse/rebuild -ContentType "application/json" -Body '{"confirm_replace":true}'
+```

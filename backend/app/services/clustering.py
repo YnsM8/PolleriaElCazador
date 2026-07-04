@@ -1,19 +1,22 @@
 from __future__ import annotations
 
+from functools import lru_cache
+
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 from app.services.analytics import load_processed_sales
+from app.services.repository import get_storage_mode, read_sql_dataframe
 
 
 FEATURES = ["precio_unitario", "margen_porcentaje", "frecuencia_mensual", "margen_unitario"]
 CLUSTER_NAMES = ["ALTO VALOR", "ALTO VOLUMEN", "NICHO RENTABLE", "BAJO RENDIMIENTO"]
 
 
+@lru_cache(maxsize=1)
 def get_dish_clusters() -> dict[str, object]:
-    sales = load_processed_sales()
-    metrics = _build_dish_metrics(sales)
+    metrics = _build_dish_metrics_from_postgres() if get_storage_mode() == "postgres" else _build_dish_metrics(load_processed_sales())
 
     scaler = StandardScaler()
     model_input = metrics[FEATURES]
@@ -54,6 +57,10 @@ def get_dish_clusters() -> dict[str, object]:
     }
 
 
+def clear_cluster_cache() -> None:
+    get_dish_clusters.cache_clear()
+
+
 def _build_dish_metrics(sales: pd.DataFrame) -> pd.DataFrame:
     sales = sales.copy()
     sales["costo_unitario"] = sales["costo_total"] / sales["cantidad"]
@@ -67,6 +74,29 @@ def _build_dish_metrics(sales: pd.DataFrame) -> pd.DataFrame:
             frecuencia=("id_venta", "count"),
         )
         .reset_index()
+    )
+    metrics["margen_unitario"] = metrics["precio_unitario"] - metrics["costo_unitario"]
+    metrics["margen_porcentaje"] = (metrics["margen_unitario"] / metrics["precio_unitario"]) * 100
+    metrics["frecuencia_mensual"] = metrics["frecuencia"] / 65
+    return metrics
+
+
+def _build_dish_metrics_from_postgres() -> pd.DataFrame:
+    metrics = read_sql_dataframe(
+        """
+        select
+            p.id_plato,
+            p.plato,
+            p.categoria,
+            avg(f.precio_unitario)::float as precio_unitario,
+            avg(f.costo_total / nullif(f.cantidad, 0))::float as costo_unitario,
+            sum(f.monto_total)::float as ingreso_total,
+            avg(f.margen_bruto)::float as margen_promedio,
+            count(f.id_venta)::int as frecuencia
+        from fact_ventas f
+        join dim_plato p on p.id_plato = f.id_plato
+        group by p.id_plato, p.plato, p.categoria
+        """
     )
     metrics["margen_unitario"] = metrics["precio_unitario"] - metrics["costo_unitario"]
     metrics["margen_porcentaje"] = (metrics["margen_unitario"] / metrics["precio_unitario"]) * 100

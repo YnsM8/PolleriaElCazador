@@ -21,7 +21,7 @@ SUGGESTED_QUESTIONS = [
 ]
 
 INTENT_KEYWORDS = {
-    "ventas": ["venta", "ventas", "vende", "vendio", "ingreso", "ticket", "pedido", "pedidos"],
+    "ventas": ["venta", "ventas", "vende", "vendio", "vendimos", "ingreso", "ticket", "pedido", "pedidos"],
     "locales": ["local", "locales", "sede", "sedes", "calle real", "huancavelica", "seguimiento"],
     "rmse": ["rmse", "error cuadratico", "raiz", "desviacion"],
     "r2": ["r2", "r²", "determinacion", "variabilidad", "explica"],

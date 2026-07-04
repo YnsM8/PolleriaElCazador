@@ -70,19 +70,34 @@ export function Prediccion({ data }: PageProps) {
       <section className="mt-6 rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-cazador-brown">Simulador predictivo</h2>
         <form className="mt-4 grid gap-3 md:grid-cols-5" onSubmit={handleSubmit}>
-          <input className="rounded-md border border-stone-300 px-3 py-2" onChange={(e) => setForm({ ...form, año: Number(e.target.value) })} type="number" value={form.año} />
-          <input className="rounded-md border border-stone-300 px-3 py-2" max={12} min={1} onChange={(e) => setForm({ ...form, mes: Number(e.target.value) })} type="number" value={form.mes} />
-          <select className="rounded-md border border-stone-300 px-3 py-2" onChange={(e) => setForm({ ...form, id_local: Number(e.target.value) })} value={form.id_local}>
-            <option value={1}>Calle Real #232</option>
-            <option value={2}>Av. Huancavelica #587</option>
-            <option value={3}>Calle Real #976</option>
-          </select>
-          <input className="rounded-md border border-stone-300 px-3 py-2" onChange={(e) => setForm({ ...form, descuento_promedio: Number(e.target.value) })} type="number" value={form.descuento_promedio} />
-          <select className="rounded-md border border-stone-300 px-3 py-2" onChange={(e) => setForm({ ...form, temporada: e.target.value })} value={form.temporada}>
-            <option>Alta</option>
-            <option>Media</option>
-            <option>Baja</option>
-          </select>
+          <label className="text-sm font-medium text-stone-700">
+            Año
+            <input className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2" name="anio" onChange={(e) => setForm({ ...form, año: Number(e.target.value) })} type="number" value={form.año} />
+          </label>
+          <label className="text-sm font-medium text-stone-700">
+            Mes
+            <input className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2" max={12} min={1} name="mes" onChange={(e) => setForm({ ...form, mes: Number(e.target.value) })} type="number" value={form.mes} />
+          </label>
+          <label className="text-sm font-medium text-stone-700">
+            Local
+            <select className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2" name="id_local" onChange={(e) => setForm({ ...form, id_local: Number(e.target.value) })} value={form.id_local}>
+              <option value={1}>Calle Real #232</option>
+              <option value={2}>Av. Huancavelica #587</option>
+              <option value={3}>Calle Real #976</option>
+            </select>
+          </label>
+          <label className="text-sm font-medium text-stone-700">
+            Descuento %
+            <input className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2" name="descuento_promedio" onChange={(e) => setForm({ ...form, descuento_promedio: Number(e.target.value) })} type="number" value={form.descuento_promedio} />
+          </label>
+          <label className="text-sm font-medium text-stone-700">
+            Temporada
+            <select className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2" name="temporada" onChange={(e) => setForm({ ...form, temporada: e.target.value })} value={form.temporada}>
+              <option>Alta</option>
+              <option>Media</option>
+              <option>Baja</option>
+            </select>
+          </label>
           <button className="rounded-md bg-cazador-brown px-4 py-2 font-semibold text-white md:col-span-5" disabled={loading} type="submit">
             {loading ? "Calculando..." : "Simular ventas"}
           </button>

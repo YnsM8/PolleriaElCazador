@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.config import get_cors_origins
 from app.services.analytics import (
     calculate_annual_margin,
     calculate_annual_sales,
@@ -13,15 +14,19 @@ from app.services.analytics import (
 )
 from app.schemas.assistant import ChatRequest, ChatResponse
 from app.schemas.model import PredictionRequest
+from app.schemas.warehouse import WarehouseRebuildRequest
 from app.services.assistant import answer_chat
-from app.services.clustering import get_dish_clusters
+from app.services.clustering import clear_cluster_cache, get_dish_clusters
 from app.services.data_generator import generate_datasets
+from app.services.repository import clear_repository_cache
 from app.services.regression import (
+    clear_model_cache,
     get_feature_importance,
     get_model_metrics,
     get_predictions_vs_real,
     predict_sales,
 )
+from app.services.warehouse import get_warehouse_schema, get_warehouse_status, rebuild_warehouse
 
 
 app = FastAPI(
@@ -32,10 +37,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,7 +54,26 @@ def health_check() -> dict[str, str]:
 
 @app.post("/api/data/generate", summary="Genera datasets sinteticos y tablas warehouse.")
 def generate_data() -> dict[str, object]:
-    return generate_datasets()
+    result = generate_datasets()
+    clear_repository_cache()
+    clear_cluster_cache()
+    clear_model_cache()
+    return result
+
+
+@app.post("/api/warehouse/rebuild", summary="Reconstruye el warehouse local o PostgreSQL si se confirma.")
+def rebuild_warehouse_endpoint(request: WarehouseRebuildRequest | None = None) -> dict[str, object]:
+    return rebuild_warehouse(confirm_replace=request.confirm_replace if request else False)
+
+
+@app.get("/api/warehouse/status", summary="Devuelve modo de persistencia, conteos y validacion relacional.")
+def get_warehouse_status_endpoint() -> dict[str, object]:
+    return get_warehouse_status()
+
+
+@app.get("/api/warehouse/schema", summary="Devuelve columnas del modelo estrella activo.")
+def get_warehouse_schema_endpoint() -> dict[str, object]:
+    return get_warehouse_schema()
 
 
 @app.get("/api/summary", summary="Devuelve KPIs generales calculados desde fact_ventas.")

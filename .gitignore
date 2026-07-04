@@ -13,10 +13,14 @@ dist/
 # Environment
 .env
 .env.*
+!.env.example
 
 # Generated data
 data/processed/*.csv
 data/warehouse/*.csv
+*.sqlite
+*.sqlite3
+*.db
 
 # OS/editor
 .DS_Store

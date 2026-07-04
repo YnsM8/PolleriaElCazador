@@ -54,12 +54,16 @@ export function AsistenteIA() {
           ))}
         </div>
         <form className="mt-4 flex gap-2" onSubmit={handleSubmit}>
-          <input
-            className="min-w-0 flex-1 rounded-md border border-stone-300 px-3 py-2"
-            onChange={(event) => setMessage(event.target.value)}
-            placeholder="Escribe una pregunta gerencial"
-            value={message}
-          />
+          <label className="min-w-0 flex-1">
+            <span className="sr-only">Pregunta gerencial</span>
+            <input
+              className="w-full rounded-md border border-stone-300 px-3 py-2"
+              name="message"
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder="Escribe una pregunta gerencial…"
+              value={message}
+            />
+          </label>
           <button className="rounded-md bg-cazador-brown px-4 py-2 font-semibold text-white" disabled={loading} type="submit">
             {loading ? "..." : "Enviar"}
           </button>

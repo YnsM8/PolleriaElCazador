@@ -1,35 +1,49 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pandas as pd
-from fastapi import HTTPException
 
-from app.services.data_generator import processed_file, warehouse_file
-
-
-def _read_csv_or_404(path: Path, friendly_name: str) -> pd.DataFrame:
-    if not path.exists():
-        raise HTTPException(
-            status_code=404,
-            detail=f"{friendly_name} no existe. Ejecuta POST /api/data/generate primero.",
-        )
-    return pd.read_csv(path)
-
-
-def load_fact_sales() -> pd.DataFrame:
-    return _read_csv_or_404(warehouse_file("fact_ventas"), "fact_ventas.csv")
-
-
-def load_locations() -> pd.DataFrame:
-    return _read_csv_or_404(warehouse_file("dim_local"), "dim_local.csv")
-
-
-def load_processed_sales() -> pd.DataFrame:
-    return _read_csv_or_404(processed_file("ventas_cazador.csv"), "ventas_cazador.csv")
+from app.services.repository import (
+    load_fact_sales,
+    load_locations,
+    load_processed_sales,
+    read_sql_dataframe,
+    get_storage_mode,
+)
 
 
 def calculate_summary() -> dict[str, float | int | str]:
+    if get_storage_mode() == "postgres":
+        row = read_sql_dataframe(
+            """
+            select
+                sum(monto_total)::float as ventas_totales,
+                count(id_venta)::int as pedidos_totales,
+                sum(margen_bruto)::float as margen_bruto_total,
+                sum(monto_subtotal)::float as monto_subtotal,
+                sum(monto_descuento)::float as descuento_total,
+                min(fecha)::text as fecha_min,
+                max(fecha)::text as fecha_max,
+                count(distinct id_local)::int as locales
+            from fact_ventas
+            """
+        ).iloc[0]
+        total_sales = float(row["ventas_totales"] or 0)
+        total_orders = int(row["pedidos_totales"] or 0)
+        subtotal = float(row["monto_subtotal"] or 0)
+        total_margin = float(row["margen_bruto_total"] or 0)
+        total_discount = float(row["descuento_total"] or 0)
+        return {
+            "ventas_totales": round(total_sales, 2),
+            "pedidos_totales": total_orders,
+            "ticket_promedio": round(total_sales / total_orders, 2) if total_orders else 0.0,
+            "margen_bruto_total": round(total_margin, 2),
+            "margen_bruto_porcentaje": round((total_margin / total_sales) * 100, 2) if total_sales else 0.0,
+            "descuento_total": round(total_discount, 2),
+            "descuento_promedio": round((total_discount / subtotal) * 100, 2) if subtotal else 0.0,
+            "periodo": f"{row['fecha_min']} a {row['fecha_max']}",
+            "locales": int(row["locales"] or 0),
+        }
+
     fact_sales = load_fact_sales()
 
     summary = _calculate_kpis(fact_sales)
@@ -57,6 +71,29 @@ def _calculate_kpis(fact_sales: pd.DataFrame) -> dict[str, float | int]:
 
 
 def calculate_locations() -> list[dict[str, object]]:
+    if get_storage_mode() == "postgres":
+        result = read_sql_dataframe(
+            """
+            select
+                l.id_local,
+                l.local,
+                l.antiguedad,
+                l.perfil,
+                sum(f.monto_total)::float as ventas_totales,
+                count(f.id_venta)::int as pedidos,
+                (sum(f.monto_total) / nullif(count(f.id_venta), 0))::float as ticket_promedio,
+                sum(f.margen_bruto)::float as margen_bruto,
+                ((sum(f.margen_bruto) / nullif(sum(f.monto_total), 0)) * 100)::float as margen_porcentaje,
+                sum(f.monto_descuento)::float as descuentos
+            from fact_ventas f
+            join dim_local l on l.id_local = f.id_local
+            group by l.id_local, l.local, l.antiguedad, l.perfil
+            order by ventas_totales desc
+            """
+        )
+        result["recomendacion"] = result.apply(_location_recommendation, axis=1)
+        return _round_records(result)
+
     fact_sales = load_fact_sales()
     locations = load_locations()
 
@@ -81,6 +118,25 @@ def calculate_locations() -> list[dict[str, object]]:
 
 
 def calculate_annual_sales() -> list[dict[str, object]]:
+    if get_storage_mode() == "postgres":
+        return _round_records(
+            read_sql_dataframe(
+                """
+                select
+                    anio,
+                    sum(monto_total)::float as ventas_totales,
+                    count(id_venta)::int as pedidos,
+                    sum(margen_bruto)::float as margen_bruto,
+                    (sum(monto_total) / nullif(count(id_venta), 0))::float as ticket_promedio,
+                    ((sum(margen_bruto) / nullif(sum(monto_total), 0)) * 100)::float as margen_porcentaje,
+                    ((sum(monto_descuento) / nullif(sum(monto_subtotal), 0)) * 100)::float as descuento_porcentaje
+                from fact_ventas
+                group by anio
+                order by anio
+                """
+            )
+        )
+
     fact_sales = load_fact_sales()
     grouped = (
         fact_sales.groupby("anio")
@@ -102,6 +158,27 @@ def calculate_annual_sales() -> list[dict[str, object]]:
 
 
 def calculate_category_sales() -> list[dict[str, object]]:
+    if get_storage_mode() == "postgres":
+        return _round_records(
+            read_sql_dataframe(
+                """
+                select
+                    p.categoria,
+                    sum(f.monto_total)::float as ventas_totales,
+                    count(f.id_venta)::int as pedidos,
+                    sum(f.cantidad)::int as unidades,
+                    sum(f.margen_bruto)::float as margen_bruto,
+                    (sum(f.monto_total) / nullif(count(f.id_venta), 0))::float as ticket_promedio,
+                    ((sum(f.margen_bruto) / nullif(sum(f.monto_total), 0)) * 100)::float as margen_porcentaje,
+                    ((sum(f.monto_descuento) / nullif(sum(f.monto_subtotal), 0)) * 100)::float as descuento_porcentaje
+                from fact_ventas f
+                join dim_plato p on p.id_plato = f.id_plato
+                group by p.categoria
+                order by ventas_totales desc
+                """
+            )
+        )
+
     sales = load_processed_sales()
     grouped = (
         sales.groupby("categoria")
@@ -124,6 +201,27 @@ def calculate_category_sales() -> list[dict[str, object]]:
 
 
 def calculate_sales_by_location() -> list[dict[str, object]]:
+    if get_storage_mode() == "postgres":
+        return _round_records(
+            read_sql_dataframe(
+                """
+                select
+                    l.id_local,
+                    l.local,
+                    sum(f.monto_total)::float as ventas_totales,
+                    count(f.id_venta)::int as pedidos,
+                    (sum(f.monto_total) / nullif(count(f.id_venta), 0))::float as ticket_promedio,
+                    sum(f.margen_bruto)::float as margen_bruto,
+                    ((sum(f.margen_bruto) / nullif(sum(f.monto_total), 0)) * 100)::float as margen_porcentaje,
+                    sum(f.monto_descuento)::float as descuentos
+                from fact_ventas f
+                join dim_local l on l.id_local = f.id_local
+                group by l.id_local, l.local
+                order by ventas_totales desc
+                """
+            )
+        )
+
     fact_sales = load_fact_sales()
     locations = load_locations()[["id_local", "local"]]
     result = _sales_by_location(fact_sales).merge(locations, on="id_local", how="left")
@@ -142,6 +240,27 @@ def calculate_sales_by_location() -> list[dict[str, object]]:
 
 
 def calculate_descriptive_stats() -> list[dict[str, object]]:
+    if get_storage_mode() == "postgres":
+        records: list[dict[str, object]] = []
+        for variable in ["monto_total", "margen_bruto", "descuento"]:
+            row = read_sql_dataframe(
+                f"""
+                select
+                    '{variable}' as variable,
+                    count({variable})::int as count,
+                    avg({variable})::float as mean,
+                    stddev_samp({variable})::float as std,
+                    min({variable})::float as min,
+                    percentile_cont(0.25) within group (order by {variable})::float as p25,
+                    percentile_cont(0.5) within group (order by {variable})::float as p50,
+                    percentile_cont(0.75) within group (order by {variable})::float as p75,
+                    max({variable})::float as max
+                from fact_ventas
+                """
+            ).iloc[0].to_dict()
+            records.append(row)
+        return _round_records(pd.DataFrame(records))
+
     sales = load_processed_sales()
     metrics = ["monto_total", "margen_bruto", "descuento"]
     stats = sales[metrics].describe(percentiles=[0.25, 0.5, 0.75]).T.reset_index()
@@ -158,6 +277,39 @@ def calculate_descriptive_stats() -> list[dict[str, object]]:
 
 
 def calculate_sales_distribution(bins: int = 12) -> list[dict[str, object]]:
+    if get_storage_mode() == "postgres":
+        distribution = read_sql_dataframe(
+            f"""
+            with stats as (
+                select min(monto_total)::float as min_value, max(monto_total)::float as max_value
+                from fact_ventas
+            ),
+            bucketed as (
+                select
+                    least(width_bucket(f.monto_total, s.min_value, s.max_value, {bins}), {bins}) as bucket,
+                    count(*)::int as frecuencia
+                from fact_ventas f
+                cross join stats s
+                group by bucket
+            ),
+            series as (
+                select generate_series(1, {bins}) as bucket
+            )
+            select
+                (s.min_value + (series.bucket - 1) * ((s.max_value - s.min_value) / {bins}))::float as desde,
+                (s.min_value + series.bucket * ((s.max_value - s.min_value) / {bins}))::float as hasta,
+                coalesce(bucketed.frecuencia, 0)::int as frecuencia
+            from series
+            cross join stats s
+            left join bucketed on bucketed.bucket = series.bucket
+            order by series.bucket
+            """
+        )
+        distribution["desde"] = distribution["desde"].round(2)
+        distribution["hasta"] = distribution["hasta"].round(2)
+        distribution["rango"] = distribution.apply(lambda row: f"{row['desde']:.2f} - {row['hasta']:.2f}", axis=1)
+        return distribution[["rango", "desde", "hasta", "frecuencia"]].to_dict(orient="records")
+
     sales = load_processed_sales()
     frequencies, edges = pd.cut(sales["monto_total"], bins=bins, retbins=True, include_lowest=True)
     distribution = frequencies.value_counts().sort_index().reset_index()
@@ -169,6 +321,23 @@ def calculate_sales_distribution(bins: int = 12) -> list[dict[str, object]]:
 
 
 def calculate_annual_margin() -> list[dict[str, object]]:
+    if get_storage_mode() == "postgres":
+        return _round_records(
+            read_sql_dataframe(
+                """
+                select
+                    anio,
+                    sum(monto_total)::float as ventas_totales,
+                    sum(margen_bruto)::float as margen_bruto,
+                    ((sum(margen_bruto) / nullif(sum(monto_total), 0)) * 100)::float as margen_porcentaje,
+                    ((sum(monto_descuento) / nullif(sum(monto_subtotal), 0)) * 100)::float as descuento_porcentaje
+                from fact_ventas
+                group by anio
+                order by anio
+                """
+            )
+        )
+
     fact_sales = load_fact_sales()
     grouped = (
         fact_sales.groupby("anio")

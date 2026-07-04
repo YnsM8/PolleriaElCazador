@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from functools import lru_cache
 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -12,6 +13,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from app.schemas.model import PredictionRequest
 from app.services.analytics import load_processed_sales
+from app.services.repository import get_storage_mode, read_sql_dataframe
 
 
 FEATURE_COLUMNS = ["anio", "mes", "id_local", "descuento_promedio", "temporada"]
@@ -79,6 +81,7 @@ def predict_sales(request: PredictionRequest) -> dict[str, object]:
     }
 
 
+@lru_cache(maxsize=1)
 def _train_model() -> dict[str, object]:
     monthly_sales = _build_monthly_sales()
     x = monthly_sales[FEATURE_COLUMNS]
@@ -123,6 +126,28 @@ def _train_model() -> dict[str, object]:
 
 
 def _build_monthly_sales() -> pd.DataFrame:
+    if get_storage_mode() == "postgres":
+        monthly = read_sql_dataframe(
+            """
+            select
+                f.anio,
+                f.mes,
+                f.id_local,
+                l.local,
+                sum(f.monto_total)::float as ventas_totales,
+                sum(f.monto_subtotal)::float as ventas_sin_descuento,
+                sum(f.monto_descuento)::float as total_descuentos,
+                count(f.id_venta)::int as numero_pedidos
+            from fact_ventas f
+            join dim_local l on l.id_local = f.id_local
+            group by f.anio, f.mes, f.id_local, l.local
+            order by f.anio, f.mes, f.id_local
+            """
+        )
+        monthly["descuento_promedio"] = (monthly["total_descuentos"] / monthly["ventas_sin_descuento"]) * 100
+        monthly["temporada"] = monthly["mes"].apply(_season_for_month)
+        return monthly
+
     sales = load_processed_sales()
     monthly = (
         sales.groupby(["anio", "mes", "id_local", "local"])
@@ -137,6 +162,10 @@ def _build_monthly_sales() -> pd.DataFrame:
     monthly["descuento_promedio"] = (monthly["total_descuentos"] / monthly["ventas_sin_descuento"]) * 100
     monthly["temporada"] = monthly["mes"].apply(_season_for_month)
     return monthly
+
+
+def clear_model_cache() -> None:
+    _train_model.cache_clear()
 
 
 def _season_for_month(month: int) -> str:
