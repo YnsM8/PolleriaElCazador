@@ -73,6 +73,12 @@ VITE_API_URL=/server
 BACKEND_CORS_ORIGINS=
 ```
 
+Para Vercel usa el pooler transaccional de Supabase, no el modo session:
+
+```txt
+DATABASE_URL=postgresql+psycopg://postgres.<project-ref>:<password>@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+```
+
 `BACKEND_CORS_ORIGINS` puede quedar vacio si frontend y backend viven en el mismo proyecto Vercel. Para dominios separados, agrega los origenes permitidos separados por coma.
 
 Comandos locales de verificacion antes de desplegar:

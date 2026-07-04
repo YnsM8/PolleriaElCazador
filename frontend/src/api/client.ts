@@ -41,49 +41,34 @@ export function getHealth(): Promise<HealthResponse> {
   return requestJson<HealthResponse>("/api/health");
 }
 
-export function getAppData(): Promise<AppData> {
-  return Promise.all([
-    requestJson<Summary>("/api/summary"),
-    requestJson<LocalMetric[]>("/api/locales"),
-    requestJson<AnnualSales[]>("/api/ventas/anuales"),
-    requestJson<CategorySales[]>("/api/ventas/categorias"),
-    requestJson<LocalMetric[]>("/api/ventas/locales"),
-    requestJson<DescriptiveStat[]>("/api/eda/estadisticas"),
-    requestJson<DistributionBin[]>("/api/eda/distribucion-ventas"),
-    requestJson<AnnualSales[]>("/api/eda/margen-anual"),
-    requestJson<ClusterResponse>("/api/clusters/platos"),
-    requestJson<ModelMetrics>("/api/model/metrics"),
-    requestJson<FeatureImportance[]>("/api/model/importancia"),
-    requestJson<PredictionVsReal[]>("/api/model/predicciones-vs-real"),
-  ]).then(
-    ([
-      summary,
-      locales,
-      ventasAnuales,
-      ventasCategorias,
-      ventasLocales,
-      estadisticas,
-      distribucionVentas,
-      margenAnual,
-      clusters,
-      modelMetrics,
-      importancia,
-      predicciones,
-    ]) => ({
-      summary,
-      locales,
-      ventasAnuales,
-      ventasCategorias,
-      ventasLocales,
-      estadisticas,
-      distribucionVentas,
-      margenAnual,
-      clusters,
-      modelMetrics,
-      importancia,
-      predicciones,
-    }),
-  );
+export async function getAppData(): Promise<AppData> {
+  const summary = await requestJson<Summary>("/api/summary");
+  const locales = await requestJson<LocalMetric[]>("/api/locales");
+  const ventasAnuales = await requestJson<AnnualSales[]>("/api/ventas/anuales");
+  const ventasCategorias = await requestJson<CategorySales[]>("/api/ventas/categorias");
+  const ventasLocales = await requestJson<LocalMetric[]>("/api/ventas/locales");
+  const estadisticas = await requestJson<DescriptiveStat[]>("/api/eda/estadisticas");
+  const distribucionVentas = await requestJson<DistributionBin[]>("/api/eda/distribucion-ventas");
+  const margenAnual = await requestJson<AnnualSales[]>("/api/eda/margen-anual");
+  const clusters = await requestJson<ClusterResponse>("/api/clusters/platos");
+  const modelMetrics = await requestJson<ModelMetrics>("/api/model/metrics");
+  const importancia = await requestJson<FeatureImportance[]>("/api/model/importancia");
+  const predicciones = await requestJson<PredictionVsReal[]>("/api/model/predicciones-vs-real");
+
+  return {
+    summary,
+    locales,
+    ventasAnuales,
+    ventasCategorias,
+    ventasLocales,
+    estadisticas,
+    distribucionVentas,
+    margenAnual,
+    clusters,
+    modelMetrics,
+    importancia,
+    predicciones,
+  };
 }
 
 export function predictSales(payload: PredictionRequest): Promise<PredictionResponse> {
