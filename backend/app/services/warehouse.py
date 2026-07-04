@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-from app.services.database import get_engine, require_engine
+from app.services.database import check_database_connection, get_engine, require_engine
 from app.services.data_generator import generate_datasets, warehouse_file
 from app.services.repository import (
     WAREHOUSE_TABLES,
@@ -23,11 +23,23 @@ MIGRATION_FILE = PROJECT_ROOT / "supabase" / "migrations" / "001_create_star_sch
 
 
 def get_warehouse_status() -> dict[str, object]:
+    database = check_database_connection()
+    if get_engine() is not None and not database["ok"]:
+        return {
+            "mode": "postgres",
+            "database_url_configured": database["configured"],
+            "database_connection": database,
+            "tables": {table: 0 for table in WAREHOUSE_TABLES},
+            "orphan_counts": {},
+            "ready": False,
+        }
+
     counts = get_table_counts()
     orphan_counts = get_orphan_counts() if any(counts.values()) else {}
     return {
         "mode": get_storage_mode(),
         "database_url_configured": get_engine() is not None,
+        "database_connection": database,
         "tables": counts,
         "orphan_counts": orphan_counts,
         "ready": all(counts.get(table, 0) > 0 for table in WAREHOUSE_TABLES) and not any(orphan_counts.values()),
